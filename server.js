@@ -21,17 +21,36 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: function (req, file, cb) {
-    const id = uuidv4();
-    const ext = path.extname(file.originalname);
-    cb(null, id + ext);
-  }
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+let upload;
+if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.S3_BUCKET) {
+  const AWS = require('aws-sdk');
+  const multerS3 = require('multer-s3');
+  const s3 = new AWS.S3({ region: process.env.AWS_REGION || 'us-east-1' });
+  upload = multer({
+    storage: multerS3({
+      s3,
+      bucket: process.env.S3_BUCKET,
+      key: function (req, file, cb) {
+        const id = uuidv4();
+        const ext = path.extname(file.originalname);
+        cb(null, id + ext);
+      }
+    }),
+    limits: { fileSize: 10 * 1024 * 1024 }
+  });
+} else {
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, UPLOAD_DIR);
+    },
+    filename: function (req, file, cb) {
+      const id = uuidv4();
+      const ext = path.extname(file.originalname);
+      cb(null, id + ext);
+    }
+  });
+  upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+}
 
 // Public endpoints
 app.post('/api/login', async (req, res) => {
