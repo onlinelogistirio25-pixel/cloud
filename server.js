@@ -22,7 +22,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
 
 let upload;
-if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.S3_BUCKET) {
+const hasAwsConfig = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
+const hasS3Bucket = !!process.env.S3_BUCKET;
+if (hasAwsConfig && hasS3Bucket) {
   const AWS = require('aws-sdk');
   const multerS3 = require('multer-s3');
   const s3 = new AWS.S3({ region: process.env.AWS_REGION || 'us-east-1' });
@@ -39,6 +41,9 @@ if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && proces
     limits: { fileSize: 10 * 1024 * 1024 }
   });
 } else {
+  if (hasAwsConfig && !hasS3Bucket) {
+    console.warn('AWS keys provided but S3_BUCKET missing — falling back to disk storage. Set S3_BUCKET in env to enable S3 uploads.');
+  }
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       cb(null, UPLOAD_DIR);
