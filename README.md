@@ -28,7 +28,22 @@ Demo credentials (from UI):
 - CLIENT456 / client2024
 
 Notes:
-- This is a small demo. For production, use HTTPS, strong secrets, and cloud storage (S3), rate limits, virus scanning.
+ - This is a small demo. For production, use HTTPS, strong secrets, and cloud storage (S3), rate limits, virus scanning.
+
+Render deploy
+-------------
+To deploy the app on Render (quick, free tier available):
+
+1. Create a Render account at https://render.com and connect your GitHub account.
+2. In Render dashboard click New → Web Service.
+3. Choose "Github" and select the repository: `onlinelogistirio25-pixel/cloud` (branch `main`).
+4. For Environment choose `Docker` (we included a Dockerfile) or `Node`.
+   - Build Command: `npm ci --omit=dev`
+   - Start Command: `npm start`
+5. Add an environment variable in Render: `JWT_SECRET` with a strong value.
+6. Create the service — Render will build and deploy and provide an HTTPS URL.
+
+Alternatively you can use the provided `render.yaml` for GitHub auto-deploys via Render's dashboard (import from repo).
 
 PM2 (run on boot)
 ------------------

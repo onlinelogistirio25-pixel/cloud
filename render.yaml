@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: logistiko-cloud
+    env: docker
+    plan: free
+    repo: https://github.com/onlinelogistirio25-pixel/cloud
+    branch: main
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    envVars:
+      - key: JWT_SECRET
+        sync: false
