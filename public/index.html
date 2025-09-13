@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Λογιστικό Cloud - Ανέβασμα Αρχείων</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .upload-zone { border: 2px dashed #cbd5e1; transition: all 0.3s ease; }
+        .upload-zone.dragover { border-color: #3b82f6; background-color: #eff6ff; }
+        .file-item { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .progress-bar { transition: width 0.3s ease; }
+        .notification { animation: slideInRight 0.3s ease-out; }
+        @keyframes slideInRight { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div id="notifications" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <header class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <div class="bg-blue-600 p-2 rounded-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="ml-3 text-xl font-semibold text-gray-900">Λογιστικό Cloud</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Online</span>
+                    </div>
+                    <span class="text-sm text-gray-600">Καλώς ήρθες, <span id="clientName" class="font-medium">Πελάτης</span></span>
+                    <button id="logoutBtn" class="text-sm text-blue-600 hover:text-blue-800 px-3 py-1 rounded-lg hover:bg-blue-50">Αποσύνδεση</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div id="loginScreen" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="bg-blue-600 p-3 rounded-full w-16 h-16 mx-auto mb-4">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Ασφαλής Πρόσβαση</h2>
+                <p class="text-gray-600 mt-2">Συνδεθείτε στον προσωπικό σας χώρο</p>
+            </div>
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Κωδικός Πελάτη</label>
+                    <input type="text" id="clientCode" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Εισάγετε τον κωδικό σας">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Κωδικός Πρόσβασης</label>
+                    <input type="password" id="password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Εισάγετε τον κωδικό πρόσβασης">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition duration-200 font-medium">Σύνδεση</button>
+            </form>
+            <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800"><strong>Demo Πρόσβαση:</strong></p>
+                <p class="text-xs text-blue-600 mt-1">Κωδικός: DEMO123 | Κωδικός: demo2024</p>
+                <p class="text-xs text-blue-600">Κωδικός: CLIENT456 | Κωδικός: client2024</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Upload Section -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">Ανέβασμα Νέων Αρχείων</h3>
+                    <button id="createFolderBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-200 text-sm font-medium">+ Νέος Φάκελος</button>
+                </div>
+                <div id="uploadZone" class="upload-zone rounded-lg p-8 text-center cursor-pointer">
+                    <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <p class="text-lg font-medium text-gray-700 mb-2">Σύρετε αρχεία εδώ ή κάντε κλικ για επιλογή</p>
+                    <p class="text-sm text-gray-500">Υποστηρίζονται: PDF, DOC, XLS, JPG, PNG (μέγιστο 10MB)</p>
+                    <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="hidden">
+                </div>
+                <div id="uploadProgress" class="hidden mt-4">
+                    <div class="bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2" id="uploadStatus">Ανέβασμα σε εξέλιξη...</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Τα Αρχεία Μου</h3>
+                        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                            <div class="relative">
+                                <input type="text" id="searchFiles" placeholder="Αναζήτηση αρχείων..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-64">
+                                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <select id="fileFilter" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="all">Όλα τα αρχεία</option>
+                                <option value="pdf">PDF</option>
+                                <option value="word">Word</option>
+                                <option value="excel">Excel</option>
+                                <option value="image">Εικόνες</option>
+                                <option value="folder">Φάκελοι</option>
+                            </select>
+                            <select id="sortFiles" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="date">Ημερομηνία</option>
+                                <option value="name">Όνομα</option>
+                                <option value="size">Μέγεθος</option>
+                                <option value="type">Τύπος</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="filesList" class="p-6">
+                    <div class="text-center py-12 text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-lg">Δεν υπάρχουν αρχεία ακόμα</p>
+                        <p class="text-sm">Ανεβάστε το πρώτο σας αρχείο για να ξεκινήσετε</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Client-side app connecting to backend
+    let token = null;
+    let currentName = 'Πελάτης';
+
+    function showNotification(message, type='success') {
+        const notification = document.createElement('div');
+        notification.className = `notification p-4 rounded-lg shadow-lg text-white max-w-sm ${type==='success'? 'bg-green-500': type==='error'? 'bg-red-500': 'bg-blue-500'}`;
+        notification.innerHTML = `<div class="flex items-center justify-between"><span class="text-sm font-medium">${message}</span><button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">✕</button></div>`;
+        document.getElementById('notifications').appendChild(notification);
+        setTimeout(()=>notification.remove(),5000);
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const clientCode = document.getElementById('clientCode').value;
+        const password = document.getElementById('password').value;
+        try {
+            const res = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientCode,password})});
+            if(!res.ok) throw new Error('Invalid');
+            const data = await res.json();
+            token = data.token;
+            currentName = data.name;
+            document.getElementById('clientName').textContent = currentName;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            fetchFiles();
+            showNotification('Σύνδεση επιτυχής');
+        } catch (err) { showNotification('Λάθος στοιχεία', 'error'); }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', ()=>{
+        token = null;
+        document.getElementById('loginScreen').classList.remove('hidden');
+        document.getElementById('dashboard').classList.add('hidden');
+        showNotification('Αποσυνδεθήκατε', 'info');
+    });
+
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadZone.addEventListener('click', ()=>fileInput.click());
+    uploadZone.addEventListener('dragover', (e)=>{e.preventDefault(); uploadZone.classList.add('dragover');});
+    uploadZone.addEventListener('dragleave', ()=>uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e)=>{e.preventDefault(); uploadZone.classList.remove('dragover'); handleFiles(e.dataTransfer.files);});
+    fileInput.addEventListener('change',(e)=>handleFiles(e.target.files));
+
+    async function handleFiles(files){
+        if(!token) return showNotification('Πρέπει να συνδεθείτε πρώτα','error');
+        for(const file of files){
+            if(file.size > 10*1024*1024){ showNotification(`${file.name} είναι >10MB`,'error'); continue; }
+            const fd = new FormData();
+            fd.append('file', file);
+            try{
+                const res = await fetch('/api/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
+                if(!res.ok) throw new Error('upload');
+                await res.json();
+                showNotification(`${file.name} ανέβηκε`);
+                fetchFiles();
+            }catch(err){ showNotification(`${file.name} απέτυχε`,'error'); }
+        }
+    }
+
+    async function fetchFiles(){
+        if(!token) return;
+        try{
+            const res = await fetch('/api/files',{headers:{'Authorization':'Bearer '+token}});
+            if(!res.ok) throw new Error('fetch');
+            const files = await res.json();
+            renderFiles(files);
+        }catch(err){ showNotification('Σφάλμα λήψης αρχείων','error'); }
+    }
+
+    function renderFiles(files){
+        const filesList = document.getElementById('filesList');
+        if(files.length===0){ filesList.innerHTML = `<div class="text-center py-12 text-gray-500">...Δεν υπάρχουν αρχεία...</div>`; return; }
+        filesList.innerHTML = files.map(f=>`<div class="file-item flex items-center justify-between p-4 border rounded mb-3"><div><p class="font-medium">${f.original_name}</p><p class="text-xs text-gray-500">${(f.size/1024).toFixed(1)} KB • ${new Date(f.upload_date).toLocaleString()}</p></div><div class="flex space-x-2"><button onclick="downloadFile('${f.id}')" class="text-blue-600">Λήψη</button><button onclick="shareFile('${f.id}')" class="text-green-600">Κοινοποίηση</button><button onclick="deleteFile('${f.id}')" class="text-red-600">Διαγραφή</button></div></div>`).join('');
+    }
+
+    async function downloadFile(id){
+        if(!token) return;
+        window.location = `/api/files/${id}/download?token=${token}`; // simple
+    }
+
+    async function shareFile(id){
+        if(!token) return;
+        try{
+            const res = await fetch(`/api/files/${id}/share`,{headers:{'Authorization':'Bearer '+token}});
+            const data = await res.json();
+            await navigator.clipboard.writeText(data.url);
+            showNotification('Σύνδεσμος κοινοποίησης αντιγράφηκε');
+        }catch(err){ showNotification('Απέτυχε η κοινοποίηση','error'); }
+    }
+
+    async function deleteFile(id){
+        if(!token) return;
+        if(!confirm('Είστε σίγουροι;')) return;
+        try{
+            const res = await fetch(`/api/files/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+token}});
+            if(!res.ok) throw new Error('del');
+            showNotification('Διαγράφηκε');
+            fetchFiles();
+        }catch(err){ showNotification('Απέτυχε η διαγραφή','error'); }
+    }
+
+    document.getElementById('createFolderBtn').addEventListener('click', ()=>{ const name = prompt('Όνομα φακέλου'); if(name) showNotification('Φάκελος δημιουργημένος (demo)'); });
+
+    // init (try to fetch files if token stored)
+    fetchFiles();
+    </script>
+</body>
+</html>
