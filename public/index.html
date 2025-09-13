@@ -190,15 +190,32 @@
         if(!token) return showNotification('Πρέπει να συνδεθείτε πρώτα','error');
         for(const file of files){
             if(file.size > 10*1024*1024){ showNotification(`${file.name} είναι >10MB`,'error'); continue; }
-            const fd = new FormData();
-            fd.append('file', file);
             try{
+                // try presign flow
+                const pres = await fetch('/api/presign',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({filename:file.name,contentType:file.type})});
+                if(pres.ok){
+                    const data = await pres.json();
+                    const url = data.url.url; // form url
+                    const formData = new FormData();
+                    Object.entries(data.url.fields).forEach(([k,v])=>formData.append(k,v));
+                    formData.append('file', file);
+                    const sres = await fetch(url, { method: 'POST', body: formData });
+                    if (!sres.ok) throw new Error('s3upload');
+                    // inform server to update size (optional)
+                    await fetch('/api/complete',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({key: data.key, size: file.size})});
+                    showNotification(`${file.name} ανέβηκε`);
+                    fetchFiles();
+                    continue;
+                }
+                // fallback to server upload
+                const fd = new FormData();
+                fd.append('file', file);
                 const res = await fetch('/api/upload',{method:'POST',headers:{'Authorization':'Bearer '+token},body:fd});
                 if(!res.ok) throw new Error('upload');
                 await res.json();
                 showNotification(`${file.name} ανέβηκε`);
                 fetchFiles();
-            }catch(err){ showNotification(`${file.name} απέτυχε`,'error'); }
+            }catch(err){ console.error(err); showNotification(`${file.name} απέτυχε`,'error'); }
         }
     }
 
@@ -215,12 +232,29 @@
     function renderFiles(files){
         const filesList = document.getElementById('filesList');
         if(files.length===0){ filesList.innerHTML = `<div class="text-center py-12 text-gray-500">...Δεν υπάρχουν αρχεία...</div>`; return; }
-        filesList.innerHTML = files.map(f=>`<div class="file-item flex items-center justify-between p-4 border rounded mb-3"><div><p class="font-medium">${f.original_name}</p><p class="text-xs text-gray-500">${(f.size/1024).toFixed(1)} KB • ${new Date(f.upload_date).toLocaleString()}</p></div><div class="flex space-x-2"><button onclick="downloadFile('${f.id}')" class="text-blue-600">Λήψη</button><button onclick="shareFile('${f.id}')" class="text-green-600">Κοινοποίηση</button><button onclick="deleteFile('${f.id}')" class="text-red-600">Διαγραφή</button></div></div>`).join('');
+        filesList.innerHTML = files.map(f=>`<div class="file-item flex items-center justify-between p-4 border rounded mb-3"><div><p class="font-medium">${f.original_name}</p><p class="text-xs text-gray-500">${formatBytes(f.size)} • ${new Date(f.upload_date).toLocaleString()}</p></div><div class="flex space-x-2"><button onclick="downloadFile('${f.id}')" class="text-blue-600">Λήψη</button><button onclick="shareFile('${f.id}')" class="text-green-600">Κοινοποίηση</button><button onclick="deleteFile('${f.id}')" class="text-red-600">Διαγραφή</button></div></div>`).join('');
+    }
+
+    function formatBytes(bytes, decimals = 1) {
+        if (!bytes) return '0 B';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
     async function downloadFile(id){
         if(!token) return;
-        window.location = `/api/files/${id}/download?token=${token}`; // simple
+        try{
+            const res = await fetch(`/api/files/${id}/download`,{headers:{'Authorization':'Bearer '+token}});
+            if(!res.ok) throw new Error('download');
+            const data = await res.json();
+            // server returns { url } when S3 enabled, or { stream: true } when streaming local. If url present, open it.
+            if(data.url){ window.open(data.url, '_blank'); return; }
+            // fallback: navigate to endpoint to stream
+            window.location = `/api/files/${id}/download?token=${token}`;
+        }catch(err){ showNotification('Απέτυχε η λήψη','error'); }
     }
 
     async function shareFile(id){
