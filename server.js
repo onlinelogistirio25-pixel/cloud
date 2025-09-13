@@ -153,6 +153,11 @@ app.get('/api/shared/:token', async (req, res) => {
   }
 });
 
+// Healthcheck
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', time: Date.now() });
+});
+
 // Init DB endpoint (dev only)
 app.post('/api/init', async (req, res) => {
   try {

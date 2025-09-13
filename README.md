@@ -45,6 +45,24 @@ To deploy the app on Render (quick, free tier available):
 
 Alternatively you can use the provided `render.yaml` for GitHub auto-deploys via Render's dashboard (import from repo).
 
+Healthcheck
+-----------
+The app exposes a lightweight health endpoint:
+
+   GET /health
+
+It returns JSON { status: 'ok', time: <timestamp> } and can be used by uptime monitors.
+
+S3 (optional)
+-------------
+To store uploads in S3 instead of the server disk, set the following environment variables on Render or your host:
+
+   AWS_ACCESS_KEY_ID
+   AWS_SECRET_ACCESS_KEY
+   AWS_REGION
+
+The repo includes a small `s3.js` helper. If you want, I can integrate direct S3 upload (replace multer disk storage with S3 streaming) — tell me and I'll prepare a PR.
+
 PM2 (run on boot)
 ------------------
 If you want the app to restart automatically after a reboot, use PM2's startup integration (macOS uses launchd).
